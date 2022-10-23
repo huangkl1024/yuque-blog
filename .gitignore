@@ -1,0 +1,7 @@
+node_modules
+.idea
+dist
+packages/vuepress-blog/docs/.vuepress/.cache
+packages/vuepress-blog/docs/.vuepress/.temp
+packages/vuepress-blog/docs/posts
+packages/vuepress-blog/docs/.vuepress/public/img/posts

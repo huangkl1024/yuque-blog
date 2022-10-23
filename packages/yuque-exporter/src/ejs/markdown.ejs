@@ -1,0 +1,25 @@
+---
+layout: Post
+title: <%= doc.title%>
+author: <%= doc.creator.name %>
+date: <%= doc.content_updated_at %>
+useHeaderImage: true
+headerMask: rgb(14, 21, 5, .2)
+permalinkPattern: /post/<%=bookDetail.book.name%>/:year/:month/:day/:slug/
+keepOldConfigs:
+    - layout
+    - useHeaderImage
+    - headerMask
+<% if(groups.length > 0) { %>
+<%='tags:'%>
+<% for(let i = 0; i < groups.length; i++) { _%>
+    - <%=groups[i]%>
+<% } _%>
+<% } %>
+---
+
+<%=doc.description%>
+
+<!-- more -->
+
+<%- content %>

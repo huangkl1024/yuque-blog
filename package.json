@@ -1,0 +1,27 @@
+{
+  "name": "yuque-blog",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "docs:clean": "pnpm --filter=vuepress-blog clean",
+    "docs:dev": "pnpm --filter=vuepress-blog dev",
+    "docs:build": "pnpm --filter=vuepress-blog build",
+    "docs:serve": "pnpm --filter=vuepress-blog serve",
+    "export:build": "pnpm --filter=yuque-exporter build",
+    "export:start": "pnpm --filter=yuque-exporter start"
+  },
+  "keywords": [],
+  "author": "huangkl",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14",
+    "pnpm": ">=7"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "webpack"
+      ]
+    }
+  }
+}
