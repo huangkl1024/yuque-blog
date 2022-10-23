@@ -30,6 +30,9 @@ export default abstract class AbstractYuqueExporter<E extends AbstractYuqueExpor
     // 获取知识库列表
     const books: RepoSerializer[] = await this.yuqueSdk.repos.list({user: curUser.id})
     const filterBooks: RepoSerializer[] = books.filter((item: any) => this.options.books.includes(item.name));
+    if (filterBooks.length <= 0) {
+      throw new Error(`cannot get ${this.options.books}!`);
+    }
     const bookDetails = await this.batchGetBookBookDetail(filterBooks);
 
     const contextData: Map<string, any> = new Map();

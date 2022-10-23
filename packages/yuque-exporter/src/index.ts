@@ -63,6 +63,7 @@ export function parseCliArgs(): CliArgs {
 
 // markdown 图片 url 匹配正则表达式
 const markdownImagesUrlRegx = /\!\[(.*?)\]\((.*?)\)/g;
+const yuqueUrlPrefix = "https://cdn.nlark.com/yuque";
 
 function toPublicUrl(savedPath: string) {
   return savedPath.substring(publicDir.length).replace(/\\/g, "/");
@@ -70,6 +71,9 @@ function toPublicUrl(savedPath: string) {
 
 function handleMarkdownImageUrl(content: string, imageUrlMap: Map<string, string>) {
   return replace(markdownImagesUrlRegx, content, (matchers, matchContent) => {
+    if (!matchContent.startsWith(yuqueUrlPrefix)) {
+      return `[${matchers[0]}](${matchContent})`
+    }
     const savedPath = getImageSavePath(matchContent);
     imageUrlMap.set(matchContent, savedPath);
     const newImageUrl = toPublicUrl(savedPath);
@@ -158,7 +162,7 @@ const yuqueExporter = new DefaultYuqueExporter({
 
 
 yuqueExporter.export().then(() => {
-});
+})
 
 
 
