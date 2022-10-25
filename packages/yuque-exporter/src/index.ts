@@ -1,24 +1,30 @@
 import path from "path";
 import DefaultYuqueExporter from "./exporter";
-import {listFiles, mkdirIfNeed, readString} from "common-util";
+import {downloadFile, isBlank, listFiles, mkdirIfNeed, readString} from "common-util";
 import ProgressBar from "progress";
 import {getBookTocItemName, renderMarkdownContentByEjs, replace} from "./support";
-import {downloadFile} from "common-util";
 import {Command} from "commander";
-import {isBlank} from "common-util";
 import matter from "gray-matter";
 import fs from "fs";
 import ConsistencyHash from "./support/ConsistencyHash";
+import {YuqueDocWritingContext} from "./exporter/typings";
 
+
+function getPathname(url: string) {
+  const urlObj = new URL(url);
+  let pathname = urlObj.pathname;
+  return pathname;
+}
 
 /**
  * 获取图片保存路径
  *
+ * @param imageSaveDir 图片保存目录
  * @param url 图片 url
  */
-export function getImageSavePath(url: string) {
-  const urlObj = new URL(url);
-  return path.join(imageSaveDir, urlObj.pathname);
+export function getImageSavePath(imageSaveDir: string, url: string) {
+  let pathname = getPathname(url);
+  return path.join(imageSaveDir, pathname);
 }
 
 /**
@@ -68,7 +74,7 @@ function handleMarkdownImageUrl(content: string, imageUrlMap: Map<string, string
     if (!matchContent.startsWith(yuqueUrlPrefix)) {
       return `[${matchers[0]}](${matchContent})`
     }
-    const savedPath = getImageSavePath(matchContent);
+    const savedPath = getImageSavePath(imageSaveDir, matchContent);
     imageUrlMap.set(matchContent, savedPath);
     const newImageUrl = toPublicUrl(publicDir, savedPath);
     return `[${matchers[0]}](${newImageUrl})`;
@@ -87,6 +93,82 @@ const consistencyHash = new ConsistencyHash(4);
 defaultHeaderImages.forEach(item => consistencyHash.addPhysicalNode(item));
 if(isBlank(cliArgs.output)) {
   cliArgs.output = `${vuepressDir}/docs/posts/yuque`;
+}
+
+function keepOldConfigIfNeed(context: YuqueDocWritingContext, fontMatter: { [p: string]: any;}) {
+  if (fs.existsSync(context.outputPath)) {
+    const oldContent = readString(context.outputPath);
+    const parsedOldContent = matter(oldContent);
+    const oldFontMatter = parsedOldContent.data;
+    const keepOldConfigs: string[] = oldFontMatter.keepOldConfigs;
+    if (keepOldConfigs && keepOldConfigs.length > 0) {
+      keepOldConfigs.filter(key => {
+        const val = oldFontMatter[key as string];
+        if (val !== null && val !== undefined) {
+          return true;
+        }
+        return false;
+      }).forEach(key => fontMatter[key as string] = oldFontMatter[key as string])
+    }
+  }
+}
+
+function randomHeaderImageIfNeed(fontMatter: { [p: string]: any;}, context: YuqueDocWritingContext) {
+  if (fontMatter.headerImage === undefined || fontMatter.headerImage === null) {
+    const fullPaths = context.tocParents
+      .map(item => getBookTocItemName(item));
+    fullPaths.push(context.docDetail.title);
+    const key = fullPaths.join("/");
+    fontMatter.headerImage = toPublicUrl(publicDir, consistencyHash.getPhysicalNode(key));
+  }
+}
+
+function parseHeaderImage(content: string, imageUrlMap) {
+  let trimContent = content.trim();
+  let firstLf = trimContent.indexOf("\n");
+  let headerImage = null;
+  if (firstLf > -1) {
+    let firstLine = trimContent.substring(0, firstLf);
+    // @ts-ignore
+    const matches = firstLine.match(/^\!\[(.*?)\]\((.*?)\)$/);
+    if (matches !== null && matches !== undefined && matches.length > 0) {
+      const url = matches[2];
+      const imageSavePath = getImageSavePath(imageSaveDir, url);
+      imageUrlMap.set(url, imageSavePath);
+      headerImage = toPublicUrl(publicDir, imageSavePath).trim();
+      content = trimContent.substring(firstLf + 1);
+    }
+  }
+  return {content, headerImage};
+}
+
+function handleMarkdownOutputFormat(context: YuqueDocWritingContext) {
+  const imageUrlMap = context.data.get("imageUrlMap");
+
+  //解析语雀配置的 headerImage
+  const __ret = parseHeaderImage(context.content, imageUrlMap);
+  let content = __ret.content;
+  const headerImage = __ret.headerImage;
+
+  // 模板渲染
+  content = renderMarkdownContentByEjs({
+    groups: context.tocParents.map(item => getBookTocItemName(item)),
+    bookDetail: context.bookDetail,
+    doc: context.docDetail,
+    content: content,
+  });
+  // 图片 url 处理
+  content = handleMarkdownImageUrl(content, imageUrlMap);
+  const parsedContent = matter(content);
+  const fontMatter = isBlank(headerImage) ? parsedContent.data : {
+    ...parsedContent.data,
+    headerImage: headerImage
+  };
+  // 保持旧配置
+  keepOldConfigIfNeed(context, fontMatter);
+  // headerImage 不存在时，随机一张图片，使用一致性哈希算法
+  randomHeaderImageIfNeed(fontMatter, context);
+  return matter.stringify(parsedContent.content, fontMatter);
 }
 
 const yuqueExporter = new DefaultYuqueExporter({
@@ -112,42 +194,10 @@ const yuqueExporter = new DefaultYuqueExporter({
       context.data.set("imageUrlMap", new Map<string, string>());
     },
     beforeDocWriting: context => {
-      let content = renderMarkdownContentByEjs(context);
       if (context.outputFormat === 'markdown') {
-        const imageUrlMap = context.data.get("imageUrlMap");
-        content = handleMarkdownImageUrl(content, imageUrlMap);
-        const parsedContent = matter(content);
-        const fontMatter = parsedContent.data;
-        // 保持旧配置
-        if (fs.existsSync(context.outputPath)) {
-          const oldContent = readString(context.outputPath);
-          const parsedOldContent = matter(oldContent);
-          const oldFontMatter = parsedOldContent.data;
-          const keepOldConfigs: string[] = oldFontMatter.keepOldConfigs;
-          if (keepOldConfigs && keepOldConfigs.length > 0) {
-            keepOldConfigs.filter(key => {
-              const val = oldFontMatter[key as string];
-              if (val !== null && val !== undefined) {
-                return true;
-              }
-              return false;
-            }).forEach(key => fontMatter[key as string] = oldFontMatter[key as string])
-          }
-        }
-
-        // TODO 解析语雀配置的 headerImage
-
-        // headerImage 不存在时，随机一张图片，使用一致性哈希算法
-        if (fontMatter.headerImage === undefined || fontMatter.headerImage === null) {
-          const fullPaths = context.tocParents
-            .map(item => getBookTocItemName(item));
-          fullPaths.push(context.docDetail.title);
-          const key = fullPaths.join("/");
-          fontMatter.headerImage = toPublicUrl(publicDir, consistencyHash.getPhysicalNode(key));
-        }
-        content = matter.stringify(parsedContent.content, fontMatter);
+        return handleMarkdownOutputFormat(context);
       }
-      return content;
+      return context.content;
     },
     afterDocExport: context => {
       context.data.get("progressBar").tick();
