@@ -1,6 +1,7 @@
 node_modules
 .idea
 dist
+build
 packages/vuepress-blog/docs/.vuepress/.cache
 packages/vuepress-blog/docs/.vuepress/.temp
 packages/vuepress-blog/docs/posts/yuque

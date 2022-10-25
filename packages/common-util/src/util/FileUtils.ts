@@ -10,8 +10,8 @@ export function deleteDir(dirPath: string) {
   if (!fs.existsSync(dirPath)) {
     return;
   }
-  let files = fs.readdirSync(dirPath);
-  files.forEach(function (file, index) {
+  const files = fs.readdirSync(dirPath);
+  files.forEach(function (file) {
     const curPath = dirPath + "/" + file;
     if (fs.statSync(curPath).isDirectory()) {
       deleteDir(curPath);
@@ -30,7 +30,7 @@ export function deleteDir(dirPath: string) {
  * @param content 内容
  */
 export function writeString(filePath: string, content: string) {
-  const fd = fs.openSync(filePath, 'w');
+  const fd = fs.openSync(filePath, "w");
   fs.writeSync(fd, content);
   // 进度条
   fs.closeSync(fd);
@@ -43,7 +43,7 @@ export function writeString(filePath: string, content: string) {
  * @returns {string} 文件内容
  */
 export function readString(filePath: string): string {
-  return fs.readFileSync(filePath, {encoding: 'utf-8'});
+  return fs.readFileSync(filePath, { encoding: "utf-8" });
 }
 
 /**
@@ -53,7 +53,7 @@ export function readString(filePath: string): string {
  */
 export function mkdirIfNeed(dirPath: string) {
   if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, {recursive: true});
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 }
 
@@ -66,7 +66,7 @@ export function listFiles(dirPath: string): string[] {
   const stat = fs.statSync(dirPath);
   if (stat.isDirectory()) {
     const subDirs = fs.readdirSync(dirPath);
-    return subDirs.flatMap(subDir => {
+    return subDirs.flatMap((subDir) => {
       const newPath = path.join(dirPath, subDir);
       return listFiles(newPath);
     });

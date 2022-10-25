@@ -7,7 +7,7 @@ import {
   YuqueExporterPostProcessor
 } from "./typings";
 import path from "path";
-import {mkdirIfNeed, writeString} from "../util/FileUtils";
+import {mkdirIfNeed, writeString} from "common-util";
 import {getBookTocItemName} from "../support";
 
 

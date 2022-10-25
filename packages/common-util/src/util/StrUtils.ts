@@ -5,5 +5,5 @@
  * @returns {boolean} true 为空, false 不为空
  */
 export function isBlank(str: string): boolean {
-  return str === null || str === undefined || str === '';
+  return str === null || str === undefined || str === "";
 }

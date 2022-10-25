@@ -1,5 +1,5 @@
 import path from "path";
-import {readString} from "../util/FileUtils";
+import {readString} from "common-util";
 import ejs from "ejs";
 import {BookDetail, YuqueDocWritingContext} from "../exporter/typings";
 

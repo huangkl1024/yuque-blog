@@ -1,24 +1,15 @@
 import path from "path";
 import DefaultYuqueExporter from "./exporter";
-import {listFiles, mkdirIfNeed, readString} from "./util/FileUtils";
+import {listFiles, mkdirIfNeed, readString} from "common-util";
 import ProgressBar from "progress";
 import {getBookTocItemName, renderMarkdownContentByEjs, replace} from "./support";
-import {downloadFile} from "./util/HttpUtils";
+import {downloadFile} from "common-util";
 import {Command} from "commander";
-import {isBlank} from "./util/StrUtils";
+import {isBlank} from "common-util";
 import matter from "gray-matter";
 import fs from "fs";
 import ConsistencyHash from "./support/ConsistencyHash";
 
-
-// 图片默认路径
-const vuepressBlogDir = "../../vuepress-blog";
-const publicDir = path.join(__dirname, `${vuepressBlogDir}/docs/.vuepress/public`);
-const imageSaveDir = path.join(publicDir, "./img/posts");
-const defaultHeaderImagesDir = path.join(publicDir, "./img/header-images");
-const defaultHeaderImages = listFiles(defaultHeaderImagesDir);
-const consistencyHash = new ConsistencyHash(4);
-defaultHeaderImages.forEach(item => consistencyHash.addPhysicalNode(item));
 
 /**
  * 获取图片保存路径
@@ -36,6 +27,7 @@ export function getImageSavePath(url: string) {
 export interface CliArgs {
   token: string;
   books: string[];
+  vuepressDir: string;
   output: string;
   exportFormat: "markdown" | "html" | "lake"
 }
@@ -49,6 +41,7 @@ export function parseCliArgs(): CliArgs {
   const program = new Command();
   program.requiredOption('-t, --token <type>', 'yuque user token')
     .requiredOption('-b, --books <type...>', 'book list')
+    .requiredOption('-v, --vuepressDir <type>', 'vuepress dir')
     .option('-o, --output <type>', 'output dir')
     .option('-f, --exportFormat <type>', 'export format', "markdown");
   program.parse();
@@ -56,7 +49,8 @@ export function parseCliArgs(): CliArgs {
   return {
     token: options.token,
     books: options.books,
-    output: isBlank(options.output) ? path.join(__dirname, `${vuepressBlogDir}/docs/posts/yuque`) : options.output,
+    vuepressDir: options.vuepressDir,
+    output: options.output,
     exportFormat: options.exportFormat
   }
 }
@@ -65,7 +59,7 @@ export function parseCliArgs(): CliArgs {
 const markdownImagesUrlRegx = /\!\[(.*?)\]\((.*?)\)/g;
 const yuqueUrlPrefix = "https://cdn.nlark.com/yuque";
 
-function toPublicUrl(savedPath: string) {
+function toPublicUrl(publicDir: string, savedPath: string) {
   return savedPath.substring(publicDir.length).replace(/\\/g, "/");
 }
 
@@ -76,13 +70,24 @@ function handleMarkdownImageUrl(content: string, imageUrlMap: Map<string, string
     }
     const savedPath = getImageSavePath(matchContent);
     imageUrlMap.set(matchContent, savedPath);
-    const newImageUrl = toPublicUrl(savedPath);
+    const newImageUrl = toPublicUrl(publicDir, savedPath);
     return `[${matchers[0]}](${newImageUrl})`;
   });
 }
 
 
 const cliArgs = parseCliArgs();
+// 图片默认路径
+const vuepressDir = cliArgs.vuepressDir;
+const publicDir = path.join(vuepressDir, "./docs/.vuepress/public");
+const imageSaveDir = path.join(publicDir, "./img/posts");
+const defaultHeaderImagesDir = path.join(publicDir, "./img/header-images");
+const defaultHeaderImages = listFiles(defaultHeaderImagesDir);
+const consistencyHash = new ConsistencyHash(4);
+defaultHeaderImages.forEach(item => consistencyHash.addPhysicalNode(item));
+if(isBlank(cliArgs.output)) {
+  cliArgs.output = `${vuepressDir}/docs/posts/yuque`;
+}
 
 const yuqueExporter = new DefaultYuqueExporter({
   yuqueOptions: {
@@ -138,7 +143,7 @@ const yuqueExporter = new DefaultYuqueExporter({
             .map(item => getBookTocItemName(item));
           fullPaths.push(context.docDetail.title);
           const key = fullPaths.join("/");
-          fontMatter.headerImage = toPublicUrl(consistencyHash.getPhysicalNode(key));
+          fontMatter.headerImage = toPublicUrl(publicDir, consistencyHash.getPhysicalNode(key));
         }
         content = matter.stringify(parsedContent.content, fontMatter);
       }
