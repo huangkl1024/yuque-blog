@@ -12,8 +12,7 @@ import {YuqueDocWritingContext} from "./exporter/typings";
 
 function getPathname(url: string) {
   const urlObj = new URL(url);
-  let pathname = urlObj.pathname;
-  return pathname;
+  return urlObj.pathname;
 }
 
 /**
@@ -205,11 +204,11 @@ const yuqueExporter = new DefaultYuqueExporter({
     afterBookExport: context => {
       const imageUrlMap: Map<string, string> = context.data.get("imageUrlMap");
       const bookDetail = context.bookDetail;
-      const progressBar = new ProgressBar(`exporting ${bookDetail.book.name} images [:bar] :percent`,
+      const imageDownloadProgressBar = new ProgressBar(`exporting ${bookDetail.book.name} images [:bar] :percent`,
         {total: imageUrlMap.size});
       for (let url of imageUrlMap.keys()) {
         // @ts-ignore
-        downloadFile(url, imageUrlMap.get(url)).then(() => progressBar.tick());
+        downloadFile(url, imageUrlMap.get(url)).then(() => imageDownloadProgressBar.tick());
       }
     }
   }]

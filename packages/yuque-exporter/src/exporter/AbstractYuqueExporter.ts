@@ -7,7 +7,9 @@ import {
   DocDetailSerializer,
   RepoSerializer,
   UserDetailSerializer,
-  YuqueDocExporterContext
+  YuqueBookExporterContext,
+  YuqueDocExporterContext,
+  YuqueExporterContext
 } from "./typings";
 
 
@@ -40,33 +42,49 @@ export default abstract class AbstractYuqueExporter<E extends AbstractYuqueExpor
       data: contextData,
       bookDetails: bookDetails
     };
-    for (let postProcessor of this.options.postProcessors) {
-      if (postProcessor.beforeExport) {
-        await postProcessor.beforeExport(context);
-      }
-    }
+    this.invokeBeforeExport(context);
 
     for (let bookDetail of bookDetails) {
       const bookContext = {
         data: contextData,
         bookDetail: bookDetail
       };
-      for (let postProcessor of this.options.postProcessors) {
-        if (postProcessor.beforeBookExport) {
-          await postProcessor.beforeBookExport(bookContext);
-        }
-      }
+      this.invokeBeforeBookExport(bookContext);
       await this.exportDocsOfBook(contextData, bookDetail);
-      for (let postProcessor of this.options.postProcessors) {
-        if (postProcessor.afterBookExport) {
-          await postProcessor.afterBookExport(bookContext);
-        }
-      }
+      this.invokeAfterBookExport(bookContext);
     }
 
+    this.invokeAfterExport(context);
+  }
+
+  private invokeAfterExport(context: YuqueExporterContext) {
     for (let postProcessor of this.options.postProcessors) {
       if (postProcessor.afterExport) {
-        await postProcessor.afterExport(context);
+        postProcessor.afterExport(context);
+      }
+    }
+  }
+
+  private invokeAfterBookExport(bookContext: YuqueBookExporterContext) {
+    for (let postProcessor of this.options.postProcessors) {
+      if (postProcessor.afterBookExport) {
+        postProcessor.afterBookExport(bookContext);
+      }
+    }
+  }
+
+  private invokeBeforeBookExport(bookContext: YuqueBookExporterContext) {
+    for (let postProcessor of this.options.postProcessors) {
+      if (postProcessor.beforeBookExport) {
+        postProcessor.beforeBookExport(bookContext);
+      }
+    }
+  }
+
+  private invokeBeforeExport(context: YuqueExporterContext) {
+    for (let postProcessor of this.options.postProcessors) {
+      if (postProcessor.beforeExport) {
+        postProcessor.beforeExport(context);
       }
     }
   }
@@ -98,11 +116,14 @@ export default abstract class AbstractYuqueExporter<E extends AbstractYuqueExpor
       };
       for (let postProcessor of this.options.postProcessors) {
         if (postProcessor.beforeDocExport) {
-          await postProcessor.beforeDocExport(context);
+          const next = postProcessor.beforeDocExport(context);
+          if (!next) {
+            break;
+          }
         }
-        await this.doExport(context);
+        this.doExport(context);
         if (postProcessor.afterDocExport) {
-          await postProcessor.afterDocExport(context);
+          postProcessor.afterDocExport(context);
         }
       }
     }

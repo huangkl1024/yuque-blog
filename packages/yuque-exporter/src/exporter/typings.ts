@@ -434,7 +434,12 @@ export interface YuqueDocWritingContext extends YuqueDocExporterContext {
 export interface AbstractYuqueExporterPostProcessor {
   beforeExport?: (context: YuqueExporterContext) => void;
   beforeBookExport?: (context: YuqueBookExporterContext) => void;
-  beforeDocExport?: (context: YuqueDocExporterContext) => void;
+  /**
+   *
+   * @param context
+   * @return true 导出，false 不导出
+   */
+  beforeDocExport?: (context: YuqueDocExporterContext) => boolean;
   afterDocExport?: (context: YuqueDocExporterContext) => void;
   afterBookExport?: (context: YuqueBookExporterContext) => void;
   afterExport?: (context: YuqueExporterContext) => void;
