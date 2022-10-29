@@ -84,17 +84,17 @@ function handleMarkdownImageUrl(content: string, imageUrlMap: Map<string, string
 const cliArgs = parseCliArgs();
 // 图片默认路径
 const vuepressDir = cliArgs.vuepressDir;
-const publicDir = path.join(vuepressDir, "./docs/.vuepress/public");
-const imageSaveDir = path.join(publicDir, "./img/posts");
+const publicDir = path.join(vuepressDir, "./.vuepress/public");
+const imageSaveDir = path.join(publicDir, "./img/posts/");
 const defaultHeaderImagesDir = path.join(publicDir, "./img/header-images");
 const defaultHeaderImages = listFiles(defaultHeaderImagesDir);
-const consistencyHash = new ConsistencyHash(4);
+const consistencyHash = new ConsistencyHash(12);
 defaultHeaderImages.forEach(item => consistencyHash.addPhysicalNode(item));
-if(isBlank(cliArgs.output)) {
-  cliArgs.output = `${vuepressDir}/docs/posts/yuque`;
+if (isBlank(cliArgs.output)) {
+  cliArgs.output = `${vuepressDir}/posts/yuque`;
 }
 
-function keepOldConfigIfNeed(context: YuqueDocWritingContext, fontMatter: { [p: string]: any;}) {
+function keepOldConfigIfNeed(context: YuqueDocWritingContext, fontMatter: { [p: string]: any; }) {
   if (fs.existsSync(context.outputPath)) {
     const oldContent = readString(context.outputPath);
     const parsedOldContent = matter(oldContent);
@@ -112,7 +112,7 @@ function keepOldConfigIfNeed(context: YuqueDocWritingContext, fontMatter: { [p: 
   }
 }
 
-function randomHeaderImageIfNeed(fontMatter: { [p: string]: any;}, context: YuqueDocWritingContext) {
+function randomHeaderImageIfNeed(fontMatter: { [p: string]: any; }, context: YuqueDocWritingContext) {
   if (fontMatter.headerImage === undefined || fontMatter.headerImage === null) {
     const fullPaths = context.tocParents
       .map(item => getBookTocItemName(item));
@@ -216,7 +216,9 @@ const yuqueExporter = new DefaultYuqueExporter({
 
 
 yuqueExporter.export().then(() => {
-})
+  console.log("header images hits:")
+  console.log(consistencyHash.getHits())
+});
 
 
 
