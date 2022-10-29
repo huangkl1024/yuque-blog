@@ -17,11 +17,13 @@ export default class ConsistencyHash {
   private readonly virtualNodeNum: number;
   private readonly physicalNodes: Set<string>;
   private sortedNodes: ConsistencyHashNode[];
+  private physicalNodeHits: Map<string, number>;
 
   public constructor(virtualNodeNum: number) {
     this.virtualNodeNum = virtualNodeNum;
     this.physicalNodes = new Set<string>();
     this.sortedNodes = [];
+    this.physicalNodeHits = new Map<string, number>();
   }
 
 
@@ -78,10 +80,22 @@ export default class ConsistencyHash {
     const hashCode = ConsistencyHash.hash(key);
     for (let node of this.sortedNodes) {
       if (node.hash > hashCode) {
+        this.hitPhysicalNode(node);
         return node;
       }
     }
+    this.hitPhysicalNode(this.sortedNodes[0]);
     return this.sortedNodes[0];
+  }
+
+  private hitPhysicalNode(node: ConsistencyHashNode) {
+    let physicalNodeHit = this.physicalNodeHits.get(node.physicalNode);
+    if (physicalNodeHit === null || physicalNodeHit == undefined) {
+      physicalNodeHit = 1;
+    } else {
+      physicalNodeHit++;
+    }
+    this.physicalNodeHits.set(node.physicalNode, physicalNodeHit);
   }
 
   /**
@@ -137,6 +151,17 @@ export default class ConsistencyHash {
 
   public getConsistencyHashNodes() {
     return this.sortedNodes;
+  }
+
+  public getHits() {
+    const hits: Map<string, number> = new Map<string, number>();
+    this.physicalNodeHits.forEach((v, k) => hits.set(k, v));
+    for (let physicalNode of this.physicalNodes) {
+      if (!hits.has(physicalNode)) {
+        hits.set(physicalNode, 0);
+      }
+    }
+    return hits;
   }
 }
 
