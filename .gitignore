@@ -4,5 +4,6 @@ dist
 build
 packages/vuepress-blog/.vuepress/.cache
 packages/vuepress-blog/.vuepress/.temp
+packages/vuepress-blog/.vuepress/dist
 packages/vuepress-blog/posts/yuque
 packages/vuepress-blog/.vuepress/public/img/posts/yuque

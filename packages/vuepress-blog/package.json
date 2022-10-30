@@ -21,6 +21,7 @@
     "vuepress-theme-gungnir": "2.0.0-alpha.26"
   },
   "devDependencies": {
+    "@vuepress/utils": "2.0.0-alpha.1",
     "rimraf": "^3.0.2"
   }
 }

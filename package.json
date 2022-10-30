@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "build": "pnpm -r --stream build",
     "docs:clean": "pnpm --filter=vuepress-blog clean",
     "docs:dev": "pnpm --filter=vuepress-blog dev",
     "docs:build": "pnpm --filter=vuepress-blog build",

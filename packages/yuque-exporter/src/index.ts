@@ -1,11 +1,10 @@
 import path from "path";
 import DefaultYuqueExporter from "./exporter";
-import {downloadFile, isBlank, listFiles, mkdirIfNeed, readString} from "common-util";
+import {deleteFileOrDir, downloadFile, isBlank, listFiles, mkdirIfNeed, readString} from "common-util";
 import ProgressBar from "progress";
 import {getBookTocItemName, renderMarkdownContentByEjs, replace} from "./support";
 import {Command} from "commander";
 import matter from "gray-matter";
-import fs from "fs";
 import ConsistencyHash from "./support/ConsistencyHash";
 import {YuqueDocWritingContext} from "./exporter/typings";
 
@@ -71,15 +70,14 @@ function toPublicUrl(publicDir: string, savedPath: string) {
 function handleMarkdownImageUrl(content: string, imageUrlMap: Map<string, string>) {
   return replace(markdownImagesUrlRegx, content, (matchers, matchContent) => {
     if (!matchContent.startsWith(yuqueUrlPrefix)) {
-      return `[${matchers[0]}](${matchContent})`
+      return `![${matchers[0]}](${matchContent})`
     }
     const savedPath = getImageSavePath(imageSaveDir, matchContent);
     imageUrlMap.set(matchContent, savedPath);
     const newImageUrl = toPublicUrl(publicDir, savedPath);
-    return `[${matchers[0]}](${newImageUrl})`;
+    return `![${matchers[0]}](${newImageUrl})`;
   });
 }
-
 
 const cliArgs = parseCliArgs();
 // 图片默认路径
@@ -95,20 +93,22 @@ if (isBlank(cliArgs.output)) {
 }
 
 function keepOldConfigIfNeed(context: YuqueDocWritingContext, fontMatter: { [p: string]: any; }) {
-  if (fs.existsSync(context.outputPath)) {
-    const oldContent = readString(context.outputPath);
-    const parsedOldContent = matter(oldContent);
-    const oldFontMatter = parsedOldContent.data;
-    const keepOldConfigs: string[] = oldFontMatter.keepOldConfigs;
-    if (keepOldConfigs && keepOldConfigs.length > 0) {
-      keepOldConfigs.filter(key => {
-        const val = oldFontMatter[key as string];
-        if (val !== null && val !== undefined) {
-          return true;
-        }
-        return false;
-      }).forEach(key => fontMatter[key as string] = oldFontMatter[key as string])
-    }
+  const oldDataMap: Map<string, any> = context.data.get("oldDataMap");
+  if (!oldDataMap.has(context.outputPath)) {
+    return;
+  }
+
+  const oldData = oldDataMap.get(context.outputPath);
+  const oldFontMatter = oldData.contentMatter.data;
+  const keepOldConfigs: string[] = oldFontMatter.keepOldConfigs;
+  if (keepOldConfigs && keepOldConfigs.length > 0) {
+    keepOldConfigs.filter(key => {
+      const val = oldFontMatter[key as string];
+      if (val !== null && val !== undefined) {
+        return true;
+      }
+      return false;
+    }).forEach(key => fontMatter[key as string] = oldFontMatter[key as string])
   }
 }
 
@@ -170,6 +170,30 @@ function handleMarkdownOutputFormat(context: YuqueDocWritingContext) {
   return matter.stringify(parsedContent.content, fontMatter);
 }
 
+function parseOldDataMap(files: string[]) {
+  const oldDataMap: Map<string, { content: string; contentMatter: any }> =
+    new Map<string, { content: string; contentMatter: any }>();
+  for (let file of files) {
+    const content = readString(file);
+    const contentMatter = matter(content);
+    oldDataMap.set(file, {
+      content,
+      contentMatter
+    });
+  }
+  return oldDataMap;
+}
+
+function deleteYuqueExportFile(files: string[], oldDataMap: Map<string, { content: string; contentMatter: any }>) {
+  for (let file of files) {
+    const oldData = oldDataMap.get(file);
+    const oldDataContentMatter = oldData.contentMatter.data;
+    if (oldDataContentMatter?.source === "yuque-export") {
+      deleteFileOrDir(file);
+    }
+  }
+}
+
 const yuqueExporter = new DefaultYuqueExporter({
   yuqueOptions: {
     token: cliArgs.token
@@ -178,6 +202,15 @@ const yuqueExporter = new DefaultYuqueExporter({
   output: cliArgs.output,
   outputFormat: cliArgs.exportFormat,
   postProcessors: [{
+    beforeExport: context => {
+      const files = listFiles(cliArgs.output, filePath => {
+        let basename = path.basename(filePath);
+        return basename.endsWith("md") || basename.endsWith("md");
+      });
+      const oldDataMap = parseOldDataMap(files);
+      deleteYuqueExportFile(files, oldDataMap);
+      context.data.set("oldDataMap", oldDataMap);
+    },
     beforeBookExport: context => {
       const bookDetail = context.bookDetail;
       const bookDir = path.join(cliArgs.output, bookDetail.book.name);
@@ -191,6 +224,9 @@ const yuqueExporter = new DefaultYuqueExporter({
 
       // 存放图片 url, key: 图片 url, value:图片保存路径
       context.data.set("imageUrlMap", new Map<string, string>());
+    },
+    beforeDocExport: context => {
+      return context.docDetail.format === "lake";
     },
     beforeDocWriting: context => {
       if (context.outputFormat === 'markdown') {
