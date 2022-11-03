@@ -1,5 +1,5 @@
 import {Command} from "commander";
-import {AliyunOssUploader} from "./uploader/AliyunOssUploader";
+import {QiniuOssUploader} from "./uploader/QiniuOssUploader";
 
 /**
  * 命令行参数对象
@@ -7,9 +7,8 @@ import {AliyunOssUploader} from "./uploader/AliyunOssUploader";
 interface CliArgs {
   dir: string;
   output: string;
-  region: string;
-  accessKeyId: string;
-  accessKeySecret: string;
+  accessKey: string;
+  secretKey: string;
   bucket: string;
 }
 
@@ -22,32 +21,30 @@ function parseCliArgs(): CliArgs {
   const program = new Command();
   program.requiredOption('-d, --dir <type>', 'dir')
     .requiredOption("-o, --output <type>", "output dir")
-    .requiredOption("-r, --region <type>", "aliyun oss regin")
-    .requiredOption("-i, --accessKeyId <type>", "aliyun oss accessKeyId")
-    .requiredOption("-s, --accessKeySecret <type>", "aliyun oss accessKeySecret")
-    .requiredOption("-b, --bucket <type>", "aliyun oss bucket")
+    .requiredOption("-a, --accessKey <type>", "qiniu oss access key")
+    .requiredOption("-s, --secretKey <type>", "qiniu oss secret key")
+    .requiredOption("-b, --bucket <type>", "qiniu oss bucket")
   program.parse();
   const options = program.opts();
   return {
     dir: options.dir,
     output: options.output,
-    region: options.region,
-    accessKeyId: options.accessKeyId,
-    accessKeySecret: options.accessKeySecret,
+    accessKey: options.accessKey,
+    secretKey: options.secretKey,
     bucket: options.bucket,
   }
 }
 
-export function aliyunOssUploaderCli() {
+export function qiniuOssUploaderCli() {
   const cliArgs = parseCliArgs();
-  const ossUploader = new AliyunOssUploader({
+  const ossUploader = new QiniuOssUploader({
     ossBaseDir: "/huangkl-blog/asset/images/",
+    ossImgUrlPrefix: "http://rkkinktlb.hn-bkt.clouddn.com/",
     outputDir: cliArgs.output,
     mdDir: cliArgs.dir,
-    region: cliArgs.region,
-    accessKeyId: cliArgs.accessKeyId,
-    accessKeySecret: cliArgs.accessKeySecret,
-    bucket: cliArgs.bucket
+    accessKey: cliArgs.accessKey,
+    secretKey: cliArgs.secretKey,
+    buket: cliArgs.bucket
   });
   ossUploader.upload().then(() => {
     process.exit(0);

@@ -6,7 +6,6 @@ import fs from "fs";
 
 
 export interface AliyunOssOption extends OssUploaderOption {
-  baseDir: string;
   /**
    * 填写Bucket所在地域。以华东1（杭州）为例，Region填写为oss-cn-hangzhou。
    */
@@ -81,10 +80,5 @@ export class AliyunOssUploader extends AbstractOssUploader {
       .replace(/\\+/g, "/").substring(1);
     let url = `https://${this.option.bucket}.${this.option.region}.aliyuncs.com/${urlPath}`;
     return encodeURI(url);
-  }
-
-  private getOssDir(imgPath: string) {
-    return path.normalize(path.join(this.option.baseDir, this.getRelativeDirOfMdDir(imgPath)))
-      .replace(/\\+/g, "/");
   }
 }

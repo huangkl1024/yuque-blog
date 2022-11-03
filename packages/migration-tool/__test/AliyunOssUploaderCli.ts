@@ -1,3 +1,3 @@
-import {aliYunOssUploaderCli} from "../src";
+import {aliyunOssUploaderCli} from "../src";
 
-aliYunOssUploaderCli();
+aliyunOssUploaderCli();

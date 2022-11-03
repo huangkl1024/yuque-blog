@@ -1,4 +1,4 @@
-import {listFiles, mkdirIfNeed, writeString} from "common-util";
+import {isBlank, listFiles, mkdirIfNeed, writeString} from "common-util";
 import path from "path";
 import {resolveMdLocalImageUrl} from "./UploadSupport";
 import fs from "fs";
@@ -6,7 +6,8 @@ import fs from "fs";
 
 export interface OssUploaderOption {
   mdDir: string;
-  outputDir: string
+  outputDir: string;
+  ossBaseDir?: string;
 }
 
 export abstract class AbstractOssUploader {
@@ -73,5 +74,35 @@ export abstract class AbstractOssUploader {
    * @param imgPathMap key: image path, val: md file
    * @protected
    */
-  protected abstract doUpload(imgPathMap: Map<string, string>);
+  protected abstract doUpload(imgPathMap: Map<string, string>): Promise<any>;
+
+  /**
+   * 获取上传的 oss 目录
+   *
+   * @param imgPath
+   * @protected
+   */
+  protected getOssDir(imgPath: string) {
+    let relativeDirOfMdDir = this.getRelativeDirOfMdDir(imgPath);
+    let ossBaseDir = this.option.ossBaseDir;
+    let ossDir = (
+      isBlank(ossBaseDir) ?
+        relativeDirOfMdDir :
+        path.normalize(path.join(ossBaseDir, relativeDirOfMdDir))
+    ).replace(/\\+/g, "/");
+    if (!ossDir.startsWith("/")) {
+      ossDir += "/";
+    }
+    return ossDir.endsWith("/") ? ossDir : ossDir + "/";
+  }
+
+  /**
+   * 获取 oss 图片路径
+   *
+   * @param imgPath
+   * @protected
+   */
+  protected getOssImagePath(imgPath: string) {
+    return this.getOssDir(imgPath) + path.basename(imgPath);
+  }
 }

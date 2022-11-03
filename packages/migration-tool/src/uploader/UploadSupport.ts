@@ -3,6 +3,11 @@ import path from "path";
 
 
 const markdownImagesUrlRegx = /\!\[(.*?)\]\((.*?)\)/g;
+const abstractPathPrefixRegx = /(^[a-zA-Z]\\:.*)|(^\/.*)/g;
+
+function isAbstractPath(filePath: string) {
+  return filePath.match(abstractPathPrefixRegx);
+}
 
 /**
  * 解析 md 本地图片 url
@@ -21,7 +26,7 @@ export function resolveMdLocalImageUrl(mdFilePath: string, handle: (imgPath: str
     }
 
     let imagePathOfLocal = imgUrl;
-    if (imgUrl.startsWith("./") && !imgUrl.startsWith("/")) {
+    if (imgUrl.startsWith("./") || !isAbstractPath(imgUrl)) {
       // 相对路径
       imagePathOfLocal = path.join(baseDir, imgUrl);
     }

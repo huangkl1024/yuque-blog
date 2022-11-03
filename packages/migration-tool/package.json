@@ -30,6 +30,7 @@
   "dependencies": {
     "ali-oss": "^6.17.1",
     "commander": "^9.4.1",
-    "common-util": "workspace:^1.0.0"
+    "common-util": "workspace:^1.0.0",
+    "node-qiniu": "^6.2.0"
   }
 }
