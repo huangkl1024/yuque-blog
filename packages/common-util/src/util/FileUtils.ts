@@ -68,6 +68,9 @@ export function mkdirIfNeed(dirPath: string) {
  * @param filter
  */
 export function listFiles(dirPath: string, filter?: (filePath: string) => boolean): string[] {
+  if (!fs.existsSync(dirPath)) {
+    return [];
+  }
   const stat = fs.statSync(dirPath);
   if (stat.isDirectory()) {
     const subDirs = fs.readdirSync(dirPath);
