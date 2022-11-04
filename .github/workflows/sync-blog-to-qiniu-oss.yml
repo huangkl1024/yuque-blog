@@ -43,7 +43,7 @@ jobs:
         run: pnpm build
         
       - name: Export
-        run: pnpm docs:start -t ${{ secrets.TOKEN }} -b ${{ secrets.BOOKS }} -v ${{ VUEPRESS_DIR }}
+        run: pnpm docs:start -t ${{ secrets.TOKEN }} -b ${{ secrets.BOOKS }} -v ${{ secrets.VUEPRESS_DIR }}
         
       - name: Build docs
         run: pnpm docs:build
