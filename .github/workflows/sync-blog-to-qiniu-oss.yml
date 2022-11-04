@@ -41,9 +41,12 @@ jobs:
         
       - name: Buid
         run: pnpm build
-        
+      
+      - name: Clean docs
+        run: pnpm docs:clean
+      
       - name: Export
-        run: pnpm docs:start -t ${{ secrets.TOKEN }} -b ${{ secrets.BOOKS }} -v ${{ secrets.VUEPRESS_DIR }}
+        run: pnpm docs:start -t W67bj6L6HrneRAySozu8bAlXBQuup56eqHGgbIfp -b 学习笔记 -v /home/runner/work/yuque-blog/yuque-blog/packages/vuepress-blog
         
       - name: Build docs
         run: pnpm docs:build
