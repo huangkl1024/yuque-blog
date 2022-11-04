@@ -50,3 +50,23 @@ jobs:
         
       - name: Build docs
         run: pnpm docs:build
+        
+      - name: Upload docs to qiniu
+        run: |
+          cd /home/runner/work/yuque-blog/yuque-blog/packages/vuepress-blog/.vuepress/dist
+          wget https://devtools.qiniu.com/qshell-v2.9.0-linux-amd64.tar.gz
+          pwd
+          ls
+          echo "tar qshell tar gz file"
+          tar -xzvf qshell-v2.9.0-linux-amd64.tar.gz
+          ls
+          echo "add execute permission to qshell"
+          chmod +x ./qshell
+          echo "add qiniu account"
+          ./qshell account  ${{ secrets.AK }} ${{ secrets.SK }} ${{ secrets.ACCOUNT }}
+          echo "generate upload config"
+          echo "{\"src_dir\":\"./\",\"ignore_dir\":false,\"bucket\":\"huangkl1024-blog\",\"skip_file_prefixes\":\"qshell,upload.conf\",\"skip_path_prefixes\":\".git,.github\",\"overwrite\":true}" > upload.conf
+          echo "upload config is"
+          cat upload.conf
+          echo "upload repos"
+          ./qshell qupload upload.conf
