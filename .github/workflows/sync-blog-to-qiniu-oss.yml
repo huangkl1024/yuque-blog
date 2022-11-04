@@ -46,7 +46,7 @@ jobs:
         run: pnpm docs:clean
       
       - name: Export blogs from yuque
-        run: pnpm export:start -t ${{ secrets.TOKEN }} -b ${{ secrets.BOOKS }} -v ${{ secrets.VUEPRESS_DIR }}
+        run: pnpm export:start -t ${{ secrets.TOKEN }} -b 学习笔记 -v /home/runner/work/yuque-blog/yuque-blog/packages/vuepress-blog
         
       - name: Build docs
         run: pnpm docs:build
